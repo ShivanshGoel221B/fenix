@@ -40,7 +40,7 @@ import org.mozilla.fenix.helpers.ext.waitNotNull
 
 class DownloadRobot {
 
-    fun verifyDownloadPrompt() = assertDownloadPrompt()
+    fun verifyDownloadPrompt(fileName: String) = assertDownloadPrompt(fileName)
 
     fun verifyDownloadNotificationPopup() = assertDownloadNotificationPopup()
 
@@ -65,9 +65,15 @@ class DownloadRobot {
                 .waitForExists(waitingTime)
         )
 
+    fun openDownloadedFile(fileName: String) {
+        downloadedFile(fileName)
+            .check(matches(isDisplayed()))
+            .click()
+    }
+
     class Transition {
         fun clickDownload(interact: DownloadRobot.() -> Unit): Transition {
-            clickDownloadButton().click()
+            downloadButton().click()
 
             DownloadRobot().interact()
             return Transition()
@@ -81,7 +87,7 @@ class DownloadRobot {
         }
 
         fun clickOpen(type: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            clickOpenButton().click()
+            openDownloadButton().click()
 
             // verify open intent is matched with associated data type
             Intents.intended(
@@ -100,7 +106,7 @@ class DownloadRobot {
 
             mDevice.waitNotNull(
                 Until.findObject(By.res(TestHelper.getPermissionAllowID() + ":id/permission_allow_button")),
-                TestAssetHelper.waitingTime
+                waitingTime
             )
 
             val allowPermissionButton = mDevice.findObject(By.res(TestHelper.getPermissionAllowID() + ":id/permission_allow_button"))
@@ -124,8 +130,9 @@ fun downloadRobot(interact: DownloadRobot.() -> Unit): DownloadRobot.Transition 
     return DownloadRobot.Transition()
 }
 
-private fun assertDownloadPrompt() {
+private fun assertDownloadPrompt(fileName: String) {
     mDevice.waitNotNull(Until.findObjects(By.res("$packageName:id/download_button")))
+    mDevice.waitNotNull(Until.findObjects(By.text(fileName)))
 }
 
 private fun assertDownloadNotificationPopup() {
@@ -138,15 +145,16 @@ private fun assertDownloadNotificationPopup() {
 }
 
 private fun closePromptButton() =
-    onView(withId(R.id.close_button)).inRoot(isDialog()).check(matches(isDisplayed()))
+    onView(withContentDescription("Close"))
 
-private fun clickDownloadButton() =
-    onView(withText("Download")).inRoot(isDialog()).check(matches(isDisplayed()))
+private fun downloadButton() =
+    onView(withText("Download"))
+        .inRoot(isDialog())
+        .check(matches(isDisplayed()))
 
-private fun clickOpenButton() =
-    onView(withId(R.id.download_dialog_action_button)).check(
-        matches(isDisplayed())
-    )
+private fun openDownloadButton() =
+    onView(withId(R.id.download_dialog_action_button))
+        .check(matches(isDisplayed()))
 
 private fun downloadedFile(fileName: String) = onView(withText(fileName))
 
